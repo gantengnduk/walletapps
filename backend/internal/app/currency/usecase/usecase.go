@@ -4,6 +4,7 @@ import (
 	"context"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/shopspring/decimal"
 	"walletapps/backend/internal/app/currency"
@@ -82,6 +83,54 @@ func (u *currencyUsecase) PreviewRate(ctx context.Context, req dtos.RatePreviewR
 		Rate:         rate.String(),
 		SourceAmount: amount.String(),
 		TargetAmount: targetAmount.StringFixed(2),
+	}, nil
+}
+
+var marketPairs = []struct {
+	Pair      string
+	From      string
+	To        string
+	Precision int32
+}{
+	{Pair: "EUR/USD", From: "EUR", To: "USD", Precision: 4},
+	{Pair: "USD/SGD", From: "USD", To: "SGD", Precision: 4},
+	{Pair: "USD/IDR", From: "USD", To: "IDR", Precision: 2},
+	{Pair: "GBP/USD", From: "GBP", To: "USD", Precision: 4},
+	{Pair: "USD/JPY", From: "USD", To: "JPY", Precision: 2},
+}
+
+func (u *currencyUsecase) GetMarketRates(ctx context.Context) (*dtos.MarketRatesResponse, error) {
+	pairs := make([]dtos.MarketRateItem, 0, len(marketPairs))
+
+	for _, p := range marketPairs {
+		rate, err := u.frankfurterClient.GetLatestRate(ctx, p.From, p.To)
+		if err != nil {
+			return nil, err
+		}
+
+		var inverseStr string
+		if !rate.IsZero() {
+			inverse := decimal.NewFromInt(1).Div(rate)
+			invPrecision := int32(4)
+			if p.From == "IDR" || p.From == "JPY" {
+				invPrecision = 2
+			}
+			inverseStr = inverse.StringFixed(invPrecision)
+		}
+
+		pairs = append(pairs, dtos.MarketRateItem{
+			Pair:        p.Pair,
+			From:        p.From,
+			To:          p.To,
+			Rate:        rate.StringFixed(p.Precision),
+			InverseRate: inverseStr,
+		})
+	}
+
+	return &dtos.MarketRatesResponse{
+		Date:     time.Now().UTC().Format("2006-01-02"),
+		Provider: "European Central Bank (ECB)",
+		Pairs:    pairs,
 	}, nil
 }
 

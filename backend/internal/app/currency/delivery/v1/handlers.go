@@ -39,3 +39,12 @@ func (h *CurrencyHandler) PreviewRate(c echo.Context) error {
 	return response.SuccessBuilder(preview).Send(c)
 }
 
+func (h *CurrencyHandler) GetMarketRates(c echo.Context) error {
+	ctx := c.Request().Context()
+	rates, err := h.usecase.GetMarketRates(ctx)
+	if err != nil {
+		return err
+	}
+	return response.SuccessBuilder(rates).Send(c)
+}
+

@@ -76,7 +76,7 @@ func TestWallet_FullLifecycleAndInsufficientBalanceAudit(t *testing.T) {
 		t.Fatalf("failed to create wallet: %v", err)
 	}
 
-	if created.ID == "" || created.Name != "Main USD Wallet" || created.Currency != "USD" || created.Balance != "0.00" {
+	if created.ID == "" || created.AccountNumber == "" || created.Name != "Main USD Wallet" || created.Currency != "USD" || created.Balance != "0.00" {
 		t.Fatalf("unexpected wallet created state: %+v", created)
 	}
 
@@ -214,5 +214,95 @@ func TestWallet_FullLifecycleAndInsufficientBalanceAudit(t *testing.T) {
 	}
 	if failedType != constants.TransactionTypeWithdrawal.String() {
 		t.Errorf("expected failed type 'WITHDRAWAL', got '%s'", failedType)
+	}
+}
+
+func TestWalletUsecase_UpdateWallet(t *testing.T) {
+	ucPtr, cleanup, _ := setupTestWalletUsecase(t)
+	defer cleanup()
+	uc := *ucPtr
+	ctx := context.Background()
+
+	// 1. Create wallet
+	created, err := uc.CreateWallet(ctx, dtos.CreateWalletRequest{
+		Name:     "Initial Name",
+		Currency: "USD",
+		Category: "Savings",
+	})
+	if err != nil {
+		t.Fatalf("failed to create wallet: %v", err)
+	}
+
+	// 2. Successfully update name and category
+	updated, err := uc.UpdateWallet(ctx, created.ID, dtos.UpdateWalletRequest{
+		Name:     "Holiday Fund",
+		Category: "Travel",
+	})
+	if err != nil {
+		t.Fatalf("failed to update wallet: %v", err)
+	}
+	if updated.Name != "Holiday Fund" {
+		t.Errorf("expected updated name 'Holiday Fund', got '%s'", updated.Name)
+	}
+	if updated.Category != "Travel" {
+		t.Errorf("expected updated category 'Travel', got '%s'", updated.Category)
+	}
+
+	// 3. Test empty name validation
+	_, err = uc.UpdateWallet(ctx, created.ID, dtos.UpdateWalletRequest{
+		Name:     "   ",
+		Category: "Business",
+	})
+	if err == nil {
+		t.Error("expected error for empty name, got nil")
+	}
+
+	// 4. Test category normalization for unknown category
+	updatedNormalized, err := uc.UpdateWallet(ctx, created.ID, dtos.UpdateWalletRequest{
+		Name:     "Wild Card",
+		Category: "UnknownCustomCategory",
+	})
+	if err != nil {
+		t.Fatalf("unexpected error updating with unknown category: %v", err)
+	}
+	if updatedNormalized.Category != "Others" {
+		t.Errorf("expected category to normalize to 'Others', got '%s'", updatedNormalized.Category)
+	}
+
+	// 5. Test not found
+	_, err = uc.UpdateWallet(ctx, "non-existent-id", dtos.UpdateWalletRequest{
+		Name:     "Ghost",
+		Category: "Savings",
+	})
+	if err == nil {
+		t.Error("expected error for non-existent wallet, got nil")
+	}
+}
+
+func TestWallet_AccountNumberUniquenessAndFormat(t *testing.T) {
+	ucPtr, cleanup, _ := setupTestWalletUsecase(t)
+	defer cleanup()
+	uc := *ucPtr
+	ctx := context.Background()
+
+	w1, err := uc.CreateWallet(ctx, dtos.CreateWalletRequest{Name: "Wallet 1", Currency: "USD"})
+	if err != nil {
+		t.Fatalf("failed to create wallet 1: %v", err)
+	}
+
+	w2, err := uc.CreateWallet(ctx, dtos.CreateWalletRequest{Name: "Wallet 2", Currency: "EUR"})
+	if err != nil {
+		t.Fatalf("failed to create wallet 2: %v", err)
+	}
+
+	if w1.AccountNumber == "" || w2.AccountNumber == "" {
+		t.Fatalf("account number empty: w1=%s, w2=%s", w1.AccountNumber, w2.AccountNumber)
+	}
+	if w1.AccountNumber == w2.AccountNumber {
+		t.Fatalf("account numbers must be unique: w1=%s, w2=%s", w1.AccountNumber, w2.AccountNumber)
+	}
+	// Account number should be 18 digits timestamp format (YYYYMMDDHHMMSS + 4 subsecond digits)
+	if len(w1.AccountNumber) != 18 {
+		t.Errorf("expected 18-digit account number, got %d digits (%s)", len(w1.AccountNumber), w1.AccountNumber)
 	}
 }

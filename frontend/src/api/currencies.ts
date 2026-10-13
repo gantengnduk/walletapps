@@ -29,3 +29,21 @@ export async function fetchRatePreview(
   return request<RatePreviewResponse>(`/api/v1/rates/preview?${params.toString()}`);
 }
 
+export type MarketRateItem = {
+  pair: string;
+  from: string;
+  to: string;
+  rate: string;
+  inverse_rate: string;
+};
+
+export type MarketRatesResponse = {
+  date: string;
+  provider: string;
+  pairs: MarketRateItem[];
+};
+
+export async function fetchMarketRates(): Promise<MarketRatesResponse> {
+  return request<MarketRatesResponse>("/api/v1/rates/market");
+}
+

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/shopspring/decimal"
@@ -12,6 +13,26 @@ import (
 	"walletapps/backend/internal/app/wallet/entities"
 	"walletapps/backend/pkg/apperror"
 )
+
+var (
+	accountNumberMu sync.Mutex
+	lastTimestamp   int64
+)
+
+func generateAccountNumber() string {
+	accountNumberMu.Lock()
+	defer accountNumberMu.Unlock()
+
+	now := time.Now().UTC()
+	nano := now.UnixNano()
+	if nano <= lastTimestamp {
+		nano = lastTimestamp + 1
+	}
+	lastTimestamp = nano
+
+	t := time.Unix(0, nano).UTC()
+	return fmt.Sprintf("%s%04d", t.Format("20060102150405"), (t.Nanosecond()/100000)%10000)
+}
 
 type walletRepository struct {
 	db *sql.DB
@@ -27,17 +48,25 @@ func (r *walletRepository) BeginTx(ctx context.Context) (*sql.Tx, error) {
 
 func (r *walletRepository) Create(ctx context.Context, w *entities.Wallet) error {
 	query := `
-		INSERT INTO wallets (id, name, currency, balance, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?);
+		INSERT INTO wallets (id, account_number, name, currency, category, balance, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?);
 	`
 	now := time.Now().UTC()
 	w.CreatedAt = now
 	w.UpdatedAt = now
+	if w.Category == "" {
+		w.Category = "Savings"
+	}
+	if w.AccountNumber == "" {
+		w.AccountNumber = generateAccountNumber()
+	}
 
 	_, err := r.db.ExecContext(ctx, query,
 		w.ID,
+		w.AccountNumber,
 		w.Name,
 		w.Currency,
+		w.Category,
 		w.Balance.StringFixed(2),
 		w.CreatedAt,
 		w.UpdatedAt,
@@ -50,7 +79,7 @@ func (r *walletRepository) Create(ctx context.Context, w *entities.Wallet) error
 
 func (r *walletRepository) GetByID(ctx context.Context, id string) (*entities.Wallet, error) {
 	query := `
-		SELECT id, name, currency, balance, created_at, updated_at
+		SELECT id, COALESCE(account_number, ''), name, currency, category, balance, version, created_at, updated_at
 		FROM wallets
 		WHERE id = ?;
 	`
@@ -58,9 +87,12 @@ func (r *walletRepository) GetByID(ctx context.Context, id string) (*entities.Wa
 	var balanceStr string
 	err := r.db.QueryRowContext(ctx, query, id).Scan(
 		&w.ID,
+		&w.AccountNumber,
 		&w.Name,
 		&w.Currency,
+		&w.Category,
 		&balanceStr,
+		&w.Version,
 		&w.CreatedAt,
 		&w.UpdatedAt,
 	)
@@ -81,7 +113,7 @@ func (r *walletRepository) GetByID(ctx context.Context, id string) (*entities.Wa
 
 func (r *walletRepository) GetByIDForUpdate(ctx context.Context, tx *sql.Tx, id string) (*entities.Wallet, error) {
 	query := `
-		SELECT id, name, currency, balance, created_at, updated_at
+		SELECT id, COALESCE(account_number, ''), name, currency, category, balance, version, created_at, updated_at
 		FROM wallets
 		WHERE id = ?;
 	`
@@ -89,9 +121,12 @@ func (r *walletRepository) GetByIDForUpdate(ctx context.Context, tx *sql.Tx, id 
 	var balanceStr string
 	err := tx.QueryRowContext(ctx, query, id).Scan(
 		&w.ID,
+		&w.AccountNumber,
 		&w.Name,
 		&w.Currency,
+		&w.Category,
 		&balanceStr,
+		&w.Version,
 		&w.CreatedAt,
 		&w.UpdatedAt,
 	)
@@ -112,7 +147,7 @@ func (r *walletRepository) GetByIDForUpdate(ctx context.Context, tx *sql.Tx, id 
 
 func (r *walletRepository) List(ctx context.Context) ([]entities.Wallet, error) {
 	query := `
-		SELECT id, name, currency, balance, created_at, updated_at
+		SELECT id, COALESCE(account_number, ''), name, currency, category, balance, version, created_at, updated_at
 		FROM wallets
 		ORDER BY created_at ASC;
 	`
@@ -128,9 +163,12 @@ func (r *walletRepository) List(ctx context.Context) ([]entities.Wallet, error) 
 		var balanceStr string
 		if err := rows.Scan(
 			&w.ID,
+			&w.AccountNumber,
 			&w.Name,
 			&w.Currency,
+			&w.Category,
 			&balanceStr,
+			&w.Version,
 			&w.CreatedAt,
 			&w.UpdatedAt,
 		); err != nil {
@@ -150,14 +188,36 @@ func (r *walletRepository) List(ctx context.Context) ([]entities.Wallet, error) 
 	return wallets, nil
 }
 
-func (r *walletRepository) UpdateBalance(ctx context.Context, tx *sql.Tx, id string, newBalance decimal.Decimal) error {
+func (r *walletRepository) Update(ctx context.Context, wallet *entities.Wallet) error {
 	query := `
 		UPDATE wallets
-		SET balance = ?, updated_at = ?
+		SET name = ?, category = ?, updated_at = ?
 		WHERE id = ?;
 	`
 	now := time.Now().UTC()
-	result, err := tx.ExecContext(ctx, query, newBalance.StringFixed(2), now, id)
+	result, err := r.db.ExecContext(ctx, query, wallet.Name, wallet.Category, now, wallet.ID)
+	if err != nil {
+		return fmt.Errorf("failed to update wallet: %w", err)
+	}
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to check rows affected: %w", err)
+	}
+	if rowsAffected == 0 {
+		return apperror.NewNotFound("wallet not found")
+	}
+	wallet.UpdatedAt = now
+	return nil
+}
+
+func (r *walletRepository) UpdateBalance(ctx context.Context, tx *sql.Tx, id string, newBalance decimal.Decimal, expectedVersion int64) error {
+	query := `
+		UPDATE wallets
+		SET balance = ?, version = version + 1, updated_at = ?
+		WHERE id = ? AND version = ?;
+	`
+	now := time.Now().UTC()
+	result, err := tx.ExecContext(ctx, query, newBalance.StringFixed(2), now, id, expectedVersion)
 	if err != nil {
 		return fmt.Errorf("failed to update wallet balance: %w", err)
 	}
@@ -166,7 +226,7 @@ func (r *walletRepository) UpdateBalance(ctx context.Context, tx *sql.Tx, id str
 		return fmt.Errorf("failed to check rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
-		return apperror.NewNotFound("wallet not found for balance update")
+		return apperror.NewConflict("concurrent update detected on wallet balance, please retry")
 	}
 	return nil
 }

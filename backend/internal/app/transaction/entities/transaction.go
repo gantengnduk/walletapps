@@ -36,5 +36,6 @@ type WalletInfo struct {
 	Name     string
 	Currency string
 	Balance  string
+	Version  int64
 }
 

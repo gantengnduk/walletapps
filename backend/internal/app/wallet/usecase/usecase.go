@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/google/uuid"
@@ -28,6 +29,49 @@ func NewWalletUsecase(repo wallet.WalletRepository, client frankfurter.Frankfurt
 	}
 }
 
+var (
+	accountNumberMu sync.Mutex
+	lastTimestamp   int64
+)
+
+// generateAccountNumber produces a guaranteed-unique, timestamp-derived account number (YYYYMMDDHHMMSS + subsecond).
+func generateAccountNumber() string {
+	accountNumberMu.Lock()
+	defer accountNumberMu.Unlock()
+
+	now := time.Now().UTC()
+	nano := now.UnixNano()
+	if nano <= lastTimestamp {
+		nano = lastTimestamp + 1
+	}
+	lastTimestamp = nano
+
+	t := time.Unix(0, nano).UTC()
+	return fmt.Sprintf("%s%04d", t.Format("20060102150405"), (t.Nanosecond()/100000)%10000)
+}
+
+var validCategories = map[string]bool{
+	"Savings":       true,
+	"Travel":        true,
+	"Business":      true,
+	"Investment":    true,
+	"Daily Expense": true,
+	"Others":        true,
+}
+
+func normalizeCategory(c string) string {
+	c = strings.TrimSpace(c)
+	if c == "" {
+		return "Savings"
+	}
+	for valid := range validCategories {
+		if strings.EqualFold(valid, c) {
+			return valid
+		}
+	}
+	return "Others"
+}
+
 func (u *walletUsecase) CreateWallet(ctx context.Context, req dtos.CreateWalletRequest) (*dtos.WalletResponse, error) {
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
@@ -38,6 +82,8 @@ func (u *walletUsecase) CreateWallet(ctx context.Context, req dtos.CreateWalletR
 	if currency == "" {
 		return nil, apperror.NewBadRequest("currency cannot be empty")
 	}
+
+	category := normalizeCategory(req.Category)
 
 	// Validate currency against Frankfurter supported currencies
 	if u.frankfurterClient != nil {
@@ -50,10 +96,12 @@ func (u *walletUsecase) CreateWallet(ctx context.Context, req dtos.CreateWalletR
 	}
 
 	newWallet := &entities.Wallet{
-		ID:       uuid.New().String(),
-		Name:     name,
-		Currency: currency,
-		Balance:  decimal.NewFromInt(0),
+		ID:            uuid.New().String(),
+		AccountNumber: generateAccountNumber(),
+		Name:          name,
+		Currency:      currency,
+		Category:      category,
+		Balance:       decimal.NewFromInt(0),
 	}
 
 	if err := u.repo.Create(ctx, newWallet); err != nil {
@@ -61,12 +109,14 @@ func (u *walletUsecase) CreateWallet(ctx context.Context, req dtos.CreateWalletR
 	}
 
 	return &dtos.WalletResponse{
-		ID:        newWallet.ID,
-		Name:      newWallet.Name,
-		Currency:  newWallet.Currency,
-		Balance:   newWallet.Balance.StringFixed(2),
-		CreatedAt: newWallet.CreatedAt,
-		UpdatedAt: newWallet.UpdatedAt,
+		ID:            newWallet.ID,
+		AccountNumber: newWallet.AccountNumber,
+		Name:          newWallet.Name,
+		Currency:      newWallet.Currency,
+		Category:      newWallet.Category,
+		Balance:       newWallet.Balance.StringFixed(2),
+		CreatedAt:     newWallet.CreatedAt,
+		UpdatedAt:     newWallet.UpdatedAt,
 	}, nil
 }
 
@@ -97,12 +147,14 @@ func (u *walletUsecase) GetWallet(ctx context.Context, id string) (*dtos.WalletD
 
 	return &dtos.WalletDetailResponse{
 		Wallet: dtos.WalletResponse{
-			ID:        w.ID,
-			Name:      w.Name,
-			Currency:  w.Currency,
-			Balance:   w.Balance.StringFixed(2),
-			CreatedAt: w.CreatedAt,
-			UpdatedAt: w.UpdatedAt,
+			ID:            w.ID,
+			AccountNumber: w.AccountNumber,
+			Name:          w.Name,
+			Currency:      w.Currency,
+			Category:      w.Category,
+			Balance:       w.Balance.StringFixed(2),
+			CreatedAt:     w.CreatedAt,
+			UpdatedAt:     w.UpdatedAt,
 		},
 		RecentLedgerEntries: ledgerResponses,
 	}, nil
@@ -117,16 +169,50 @@ func (u *walletUsecase) ListWallets(ctx context.Context) ([]dtos.WalletResponse,
 	responses := make([]dtos.WalletResponse, len(wallets))
 	for i, w := range wallets {
 		responses[i] = dtos.WalletResponse{
-			ID:        w.ID,
-			Name:      w.Name,
-			Currency:  w.Currency,
-			Balance:   w.Balance.StringFixed(2),
-			CreatedAt: w.CreatedAt,
-			UpdatedAt: w.UpdatedAt,
+			ID:            w.ID,
+			AccountNumber: w.AccountNumber,
+			Name:          w.Name,
+			Currency:      w.Currency,
+			Category:      w.Category,
+			Balance:       w.Balance.StringFixed(2),
+			CreatedAt:     w.CreatedAt,
+			UpdatedAt:     w.UpdatedAt,
 		}
 	}
 
 	return responses, nil
+}
+
+func (u *walletUsecase) UpdateWallet(ctx context.Context, id string, req dtos.UpdateWalletRequest) (*dtos.WalletResponse, error) {
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		return nil, apperror.NewBadRequest("wallet name cannot be empty")
+	}
+
+	w, err := u.repo.GetByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	category := normalizeCategory(req.Category)
+
+	w.Name = name
+	w.Category = category
+
+	if err := u.repo.Update(ctx, w); err != nil {
+		return nil, err
+	}
+
+	return &dtos.WalletResponse{
+		ID:            w.ID,
+		AccountNumber: w.AccountNumber,
+		Name:          w.Name,
+		Currency:      w.Currency,
+		Category:      w.Category,
+		Balance:       w.Balance.StringFixed(2),
+		CreatedAt:     w.CreatedAt,
+		UpdatedAt:     w.UpdatedAt,
+	}, nil
 }
 
 func (u *walletUsecase) Deposit(ctx context.Context, walletID string, req dtos.DepositRequest) (*dtos.DepositResponse, error) {
@@ -149,7 +235,7 @@ func (u *walletUsecase) Deposit(ctx context.Context, walletID string, req dtos.D
 	}
 
 	newBalance := w.Balance.Add(amount)
-	if err := u.repo.UpdateBalance(ctx, tx, walletID, newBalance); err != nil {
+	if err := u.repo.UpdateBalance(ctx, tx, walletID, newBalance, w.Version); err != nil {
 		return nil, err
 	}
 
@@ -251,7 +337,7 @@ func (u *walletUsecase) Withdraw(ctx context.Context, walletID string, req dtos.
 
 	// Balance is sufficient: execute withdrawal
 	newBalance := w.Balance.Sub(amount)
-	if err := u.repo.UpdateBalance(ctx, tx, walletID, newBalance); err != nil {
+	if err := u.repo.UpdateBalance(ctx, tx, walletID, newBalance, w.Version); err != nil {
 		return nil, err
 	}
 

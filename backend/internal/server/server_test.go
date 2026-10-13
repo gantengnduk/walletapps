@@ -84,6 +84,14 @@ func TestServer_Routes(t *testing.T) {
 		t.Errorf("expected 200 for /rates/preview, got %d: %s", rec.Code, rec.Body.String())
 	}
 
+	// 3b. Test /api/v1/rates/market
+	req = httptest.NewRequest(http.MethodGet, "/api/v1/rates/market", nil)
+	rec = httptest.NewRecorder()
+	srv.Echo().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Errorf("expected 200 for /rates/market, got %d: %s", rec.Code, rec.Body.String())
+	}
+
 	// 4. Test POST /api/v1/wallets
 	walletPayload := `{"name":"Personal USD","currency":"USD"}`
 	req = httptest.NewRequest(http.MethodPost, "/api/v1/wallets", strings.NewReader(walletPayload))
@@ -111,6 +119,26 @@ func TestServer_Routes(t *testing.T) {
 	srv.Echo().ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
 		t.Errorf("expected 200 for GET /wallets, got %d", rec.Code)
+	}
+
+	// 5b. Test PATCH /api/v1/wallets/:id (Update name and category)
+	updatePayload := `{"name":"Updated Savings USD","category":"Investment"}`
+	req = httptest.NewRequest(http.MethodPatch, "/api/v1/wallets/"+walletID, strings.NewReader(updatePayload))
+	req.Header.Set("Content-Type", "application/json")
+	rec = httptest.NewRecorder()
+	srv.Echo().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("expected 200 for PATCH /wallets/:id, got %d: %s", rec.Code, rec.Body.String())
+	}
+	var updateRes struct {
+		Data struct {
+			Name     string `json:"name"`
+			Category string `json:"category"`
+		} `json:"data"`
+	}
+	_ = json.Unmarshal(rec.Body.Bytes(), &updateRes)
+	if updateRes.Data.Name != "Updated Savings USD" || updateRes.Data.Category != "Investment" {
+		t.Errorf("expected updated name and category, got %s and %s", updateRes.Data.Name, updateRes.Data.Category)
 	}
 
 	// 6. Test POST /api/v1/wallets/:id/deposit

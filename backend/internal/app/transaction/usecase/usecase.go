@@ -113,10 +113,10 @@ func (u *transactionUsecase) Transfer(ctx context.Context, req dtos.TransferRequ
 	sourceNewBal := sourceBal.Sub(amount)
 	targetNewBal := targetBal.Add(amount)
 
-	if err := u.repo.UpdateWalletBalance(ctx, tx, req.SourceWalletID, sourceNewBal); err != nil {
+	if err := u.repo.UpdateWalletBalance(ctx, tx, req.SourceWalletID, sourceNewBal, wSource.Version); err != nil {
 		return nil, err
 	}
-	if err := u.repo.UpdateWalletBalance(ctx, tx, req.TargetWalletID, targetNewBal); err != nil {
+	if err := u.repo.UpdateWalletBalance(ctx, tx, req.TargetWalletID, targetNewBal, wTarget.Version); err != nil {
 		return nil, err
 	}
 
@@ -296,10 +296,10 @@ func (u *transactionUsecase) Convert(ctx context.Context, req dtos.ConvertReques
 	sourceNewBal := sourceBal.Sub(amount)
 	targetNewBal := targetBal.Add(targetAmount)
 
-	if err := u.repo.UpdateWalletBalance(ctx, tx, req.SourceWalletID, sourceNewBal); err != nil {
+	if err := u.repo.UpdateWalletBalance(ctx, tx, req.SourceWalletID, sourceNewBal, wSource.Version); err != nil {
 		return nil, err
 	}
-	if err := u.repo.UpdateWalletBalance(ctx, tx, req.TargetWalletID, targetNewBal); err != nil {
+	if err := u.repo.UpdateWalletBalance(ctx, tx, req.TargetWalletID, targetNewBal, wTarget.Version); err != nil {
 		return nil, err
 	}
 

@@ -1,8 +1,7 @@
 import React from "react";
-import { Routes, Route } from "react-router";
+import { Routes, Route, Navigate } from "react-router";
 import { AppLayout } from "./app";
 import { WalletsPage } from "./pages/wallets-page";
-import { ConvertPage } from "./pages/convert-page";
 import { TransactionsPage } from "./pages/transactions-page";
 import { NotFoundPage } from "./pages/not-found-page";
 
@@ -11,11 +10,11 @@ export const AppRoutes: React.FC = () => {
     <Routes>
       <Route element={<AppLayout />}>
         <Route index element={<WalletsPage />} />
-        <Route path="convert" element={<ConvertPage />} />
+        {/* Redirect legacy /convert to Dashboard with modal trigger */}
+        <Route path="convert" element={<Navigate to="/?action=convert" replace />} />
         <Route path="transactions" element={<TransactionsPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Route>
     </Routes>
   );
 };
-

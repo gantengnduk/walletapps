@@ -113,3 +113,32 @@ func TestCurrencyUsecase_PreviewRate(t *testing.T) {
 	}
 }
 
+func TestCurrencyUsecase_GetMarketRates(t *testing.T) {
+	mock := &mockFrankfurterClient{
+		rates: map[string]decimal.Decimal{
+			"EUR_USD": decimal.NewFromFloat(1.0850),
+			"USD_SGD": decimal.NewFromFloat(1.3420),
+			"USD_IDR": decimal.NewFromFloat(15850.00),
+			"GBP_USD": decimal.NewFromFloat(1.2950),
+			"USD_JPY": decimal.NewFromFloat(152.40),
+		},
+	}
+	uc := NewCurrencyUsecase(mock)
+
+	res, err := uc.GetMarketRates(context.Background())
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(res.Pairs) != 5 {
+		t.Fatalf("expected 5 market rate pairs, got %d", len(res.Pairs))
+	}
+
+	if res.Pairs[0].Pair != "EUR/USD" || res.Pairs[0].Rate != "1.0850" {
+		t.Errorf("unexpected first pair: %+v", res.Pairs[0])
+	}
+	if res.Provider != "European Central Bank (ECB)" {
+		t.Errorf("expected ECB provider, got %s", res.Provider)
+	}
+}
+

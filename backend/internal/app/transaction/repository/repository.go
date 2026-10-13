@@ -29,7 +29,7 @@ func (r *transactionRepository) BeginTx(ctx context.Context) (*sql.Tx, error) {
 
 func (r *transactionRepository) GetWalletByID(ctx context.Context, id string) (*entities.WalletInfo, error) {
 	query := `
-		SELECT id, name, currency, balance
+		SELECT id, name, currency, balance, version
 		FROM wallets
 		WHERE id = ?;
 	`
@@ -39,6 +39,7 @@ func (r *transactionRepository) GetWalletByID(ctx context.Context, id string) (*
 		&w.Name,
 		&w.Currency,
 		&w.Balance,
+		&w.Version,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -51,7 +52,7 @@ func (r *transactionRepository) GetWalletByID(ctx context.Context, id string) (*
 
 func (r *transactionRepository) GetWalletForUpdate(ctx context.Context, tx *sql.Tx, id string) (*entities.WalletInfo, error) {
 	query := `
-		SELECT id, name, currency, balance
+		SELECT id, name, currency, balance, version
 		FROM wallets
 		WHERE id = ?;
 	`
@@ -61,6 +62,7 @@ func (r *transactionRepository) GetWalletForUpdate(ctx context.Context, tx *sql.
 		&w.Name,
 		&w.Currency,
 		&w.Balance,
+		&w.Version,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -71,14 +73,14 @@ func (r *transactionRepository) GetWalletForUpdate(ctx context.Context, tx *sql.
 	return &w, nil
 }
 
-func (r *transactionRepository) UpdateWalletBalance(ctx context.Context, tx *sql.Tx, id string, newBalance decimal.Decimal) error {
+func (r *transactionRepository) UpdateWalletBalance(ctx context.Context, tx *sql.Tx, id string, newBalance decimal.Decimal, expectedVersion int64) error {
 	query := `
 		UPDATE wallets
-		SET balance = ?, updated_at = ?
-		WHERE id = ?;
+		SET balance = ?, version = version + 1, updated_at = ?
+		WHERE id = ? AND version = ?;
 	`
 	now := time.Now().UTC()
-	result, err := tx.ExecContext(ctx, query, newBalance.StringFixed(2), now, id)
+	result, err := tx.ExecContext(ctx, query, newBalance.StringFixed(2), now, id, expectedVersion)
 	if err != nil {
 		return fmt.Errorf("failed to update wallet balance: %w", err)
 	}
@@ -87,7 +89,7 @@ func (r *transactionRepository) UpdateWalletBalance(ctx context.Context, tx *sql
 		return fmt.Errorf("failed to check rows affected: %w", err)
 	}
 	if rowsAffected == 0 {
-		return apperror.NewNotFound("wallet not found for balance update")
+		return apperror.NewConflict("concurrent update detected on wallet balance, please retry")
 	}
 	return nil
 }

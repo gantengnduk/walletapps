@@ -89,13 +89,13 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
     >
       {isLoading && (
         <div className="flex flex-col items-center justify-center py-12 text-slate-400 gap-3">
-          <Loader2 className="h-7 w-7 animate-spin text-indigo-600" />
+          <Loader2 className="h-7 w-7 animate-spin text-blue-600" />
           <span className="text-xs">Loading ledger entries from database...</span>
         </div>
       )}
 
       {isError && (
-        <div className="rounded-xl bg-rose-50 border border-rose-200 p-4 text-xs text-rose-700">
+        <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-xs text-red-700">
           Failed to load transaction details: {error instanceof Error ? error.message : "Unknown error"}
         </div>
       )}
@@ -110,13 +110,13 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
                   className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold uppercase tracking-wider ${
                     isCompleted
                       ? "bg-emerald-100 text-emerald-800 border border-emerald-300"
-                      : "bg-rose-100 text-rose-800 border border-rose-300"
+                      : "bg-red-100 text-red-800 border border-red-300"
                   }`}
                 >
                   {isCompleted ? (
                     <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
                   ) : (
-                    <XCircle className="h-3.5 w-3.5 text-rose-600" />
+                    <XCircle className="h-3.5 w-3.5 text-red-600" />
                   )}
                   {tx.status}
                 </span>
@@ -153,14 +153,14 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
 
           {/* Failed Transaction Banner */}
           {!isCompleted && tx.failure_reason && (
-            <div className="rounded-xl bg-rose-50 border border-rose-200 p-4 text-xs text-rose-800 flex items-start gap-3">
-              <AlertTriangle className="h-5 w-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="rounded-xl bg-red-50 border border-red-200 p-4 text-xs text-red-800 flex items-start gap-3">
+              <AlertTriangle className="h-5 w-5 text-red-600 shrink-0 mt-0.5" />
               <div>
-                <p className="font-bold text-rose-900">Audit Alert: Transaction Rejected</p>
+                <p className="font-bold text-red-900">Audit Alert: Transaction Rejected</p>
                 <p className="mt-1">
                   <strong>Reason:</strong> {tx.failure_reason}
                 </p>
-                <p className="mt-1.5 text-rose-700 leading-relaxed">
+                <p className="mt-1.5 text-red-700 leading-relaxed">
                   Per the double-entry accounting policy, no ledger entries were committed. Account balances remain unchanged.
                 </p>
               </div>
@@ -203,7 +203,7 @@ export const TransactionDetailModal: React.FC<TransactionDetailModalProps> = ({
             {tx.exchange_rate && (
               <div className="sm:col-span-2 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
                 <span className="flex items-center gap-1.5 text-slate-500 font-medium">
-                  <TrendingUp className="h-3.5 w-3.5 text-indigo-600" />
+                  <TrendingUp className="h-3.5 w-3.5 text-blue-600" />
                   Applied Frankfurter Rate:
                 </span>
                 <div className="text-right font-mono font-medium text-slate-900">

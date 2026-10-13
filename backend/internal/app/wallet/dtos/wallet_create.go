@@ -7,15 +7,18 @@ import (
 type CreateWalletRequest struct {
 	Name     string `json:"name" validate:"required"`
 	Currency string `json:"currency" validate:"required"`
+	Category string `json:"category"`
 }
 
 type WalletResponse struct {
-	ID        string    `json:"id"`
-	Name      string    `json:"name"`
-	Currency  string    `json:"currency"`
-	Balance   string    `json:"balance"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
+	ID            string    `json:"id"`
+	AccountNumber string    `json:"account_number"`
+	Name          string    `json:"name"`
+	Currency      string    `json:"currency"`
+	Category      string    `json:"category"`
+	Balance       string    `json:"balance"`
+	CreatedAt     time.Time `json:"created_at"`
+	UpdatedAt     time.Time `json:"updated_at"`
 }
 
 type LedgerEntryResponse struct {

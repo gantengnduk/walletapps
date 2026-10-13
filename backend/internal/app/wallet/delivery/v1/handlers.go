@@ -52,6 +52,23 @@ func (h *WalletHandler) ListWallets(c echo.Context) error {
 	return response.SuccessBuilder(result).Send(c)
 }
 
+func (h *WalletHandler) UpdateWallet(c echo.Context) error {
+	ctx := c.Request().Context()
+	id := c.Param("id")
+
+	var req dtos.UpdateWalletRequest
+	if err := c.Bind(&req); err != nil {
+		return err
+	}
+
+	result, err := h.usecase.UpdateWallet(ctx, id, req)
+	if err != nil {
+		return err
+	}
+
+	return response.SuccessBuilder(result).Send(c)
+}
+
 func (h *WalletHandler) Deposit(c echo.Context) error {
 	ctx := c.Request().Context()
 	id := c.Param("id")

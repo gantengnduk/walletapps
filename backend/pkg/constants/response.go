@@ -7,6 +7,7 @@ const (
 	BadRequest          ResponseMessage = "bad_request"
 	NotFound            ResponseMessage = "not_found"
 	UnprocessableEntity ResponseMessage = "unprocessable_entity"
+	Conflict            ResponseMessage = "conflict"
 	InternalServerError ResponseMessage = "internal_server_error"
 )
 

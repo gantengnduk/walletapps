@@ -25,6 +25,7 @@ export const FAMILY = {
   transaction: "transaction",
   currencies: "currencies",
   ratePreview: "ratePreview",
+  marketRates: "marketRates",
 } as const;
 
 /**
@@ -38,5 +39,6 @@ export const keys = {
   currencies: () => [FAMILY.currencies] as const,
   ratePreview: (from: string, to: string, amount: string) =>
     [FAMILY.ratePreview, from, to, amount] as const,
+  marketRates: () => [FAMILY.marketRates] as const,
 };
 

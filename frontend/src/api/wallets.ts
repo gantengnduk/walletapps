@@ -2,8 +2,10 @@ import { request } from "./client";
 
 export type Wallet = {
   id: string;
+  account_number?: string;
   name: string;
   currency: string;
+  category: string;
   balance: string;
   created_at: string;
   updated_at: string;
@@ -28,6 +30,12 @@ export type WalletDetail = {
 export type CreateWalletInput = {
   name: string;
   currency: string;
+  category?: string;
+};
+
+export type UpdateWalletInput = {
+  name: string;
+  category: string;
 };
 
 export type DepositInput = {
@@ -91,6 +99,16 @@ export async function withdrawFunds(
 ): Promise<WithdrawResponse> {
   return request<WithdrawResponse>(`/api/v1/wallets/${encodeURIComponent(walletID)}/withdraw`, {
     method: "POST",
+    body: JSON.stringify(data),
+  });
+}
+
+export async function updateWallet(
+  walletID: string,
+  data: UpdateWalletInput,
+): Promise<Wallet> {
+  return request<Wallet>(`/api/v1/wallets/${encodeURIComponent(walletID)}`, {
+    method: "PATCH",
     body: JSON.stringify(data),
   });
 }

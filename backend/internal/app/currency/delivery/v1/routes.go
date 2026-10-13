@@ -7,5 +7,6 @@ import (
 func (h *CurrencyHandler) MapRoutes(group *echo.Group) {
 	group.GET("/currencies", h.GetCurrencies)
 	group.GET("/rates/preview", h.PreviewRate)
+	group.GET("/rates/market", h.GetMarketRates)
 }
 

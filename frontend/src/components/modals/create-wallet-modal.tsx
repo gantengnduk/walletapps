@@ -6,6 +6,12 @@ import { Button } from "../button";
 import { useCurrencies } from "../../hooks/use-currencies";
 import { useCreateWallet } from "../../hooks/use-wallets";
 import { ApiError } from "../../api/client";
+import { useToast } from "../toast/toast-context";
+import {
+  WALLET_CATEGORIES,
+  DEFAULT_WALLET_CATEGORY,
+  type WalletCategory,
+} from "../wallet-category";
 
 export type CreateWalletModalProps = {
   isOpen: boolean;
@@ -20,14 +26,17 @@ export const CreateWalletModal: React.FC<CreateWalletModalProps> = ({
 }) => {
   const [name, setName] = useState("");
   const [currency, setCurrency] = useState("USD");
+  const [category, setCategory] = useState<WalletCategory>(DEFAULT_WALLET_CATEGORY);
   const [formError, setFormError] = useState<string | null>(null);
 
   const { data: currencies, isLoading: currenciesLoading } = useCurrencies();
   const createWallet = useCreateWallet();
+  const { showToast } = useToast();
 
   const handleClose = () => {
     setName("");
     setCurrency("USD");
+    setCategory(DEFAULT_WALLET_CATEGORY);
     setFormError(null);
     onClose();
   };
@@ -46,6 +55,12 @@ export const CreateWalletModal: React.FC<CreateWalletModalProps> = ({
       await createWallet.mutateAsync({
         name: trimmedName,
         currency: currency.toUpperCase(),
+        category,
+      });
+      showToast({
+        type: "success",
+        title: "Wallet Created",
+        message: `Created new ${currency.toUpperCase()} ${category} account "${trimmedName}".`,
       });
       handleClose();
       onSuccess?.();
@@ -85,6 +100,19 @@ export const CreateWalletModal: React.FC<CreateWalletModalProps> = ({
             {formError}
           </div>
         )}
+
+        <Select
+          label="Category"
+          hint="Categorize this account by financial purpose"
+          value={category}
+          onChange={(e) => setCategory(e.target.value as WalletCategory)}
+        >
+          {WALLET_CATEGORIES.map((cat) => (
+            <option key={cat} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </Select>
 
         <Field
           label="Wallet Name"

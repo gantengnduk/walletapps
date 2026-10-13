@@ -1,7 +1,7 @@
 import React from "react";
 import { Loader2 } from "lucide-react";
 
-export type ButtonVariant = "primary" | "secondary" | "quiet" | "danger";
+export type ButtonVariant = "primary" | "secondary" | "quiet" | "danger" | "success";
 export type ButtonSize = "sm" | "md" | "lg";
 
 export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -14,19 +14,21 @@ export type ButtonProps = React.ButtonHTMLAttributes<HTMLButtonElement> & {
 
 const variantClasses: Record<ButtonVariant, string> = {
   primary:
-    "bg-indigo-600 text-white hover:bg-indigo-700 active:bg-indigo-800 shadow-sm border border-transparent focus-visible:ring-indigo-500",
+    "bg-blue-600 text-white hover:bg-blue-700 active:bg-blue-800 shadow-sm border border-transparent focus-visible:ring-blue-500",
   secondary:
-    "bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 border border-slate-300 shadow-sm focus-visible:ring-slate-400",
+    "bg-white text-slate-700 hover:bg-slate-50 active:bg-slate-100 border border-slate-300 shadow-sm focus-visible:ring-blue-400",
   quiet:
-    "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200 border border-transparent focus-visible:ring-slate-400",
+    "bg-transparent text-slate-600 hover:bg-slate-100 hover:text-slate-900 active:bg-slate-200 border border-transparent focus-visible:ring-blue-400",
   danger:
-    "bg-rose-600 text-white hover:bg-rose-700 active:bg-rose-800 shadow-sm border border-transparent focus-visible:ring-rose-500",
+    "bg-red-600 text-white hover:bg-red-700 active:bg-red-800 shadow-sm border border-transparent focus-visible:ring-red-500",
+  success:
+    "bg-emerald-600 text-white hover:bg-emerald-700 active:bg-emerald-800 shadow-sm border border-transparent focus-visible:ring-emerald-500",
 };
 
 const sizeClasses: Record<ButtonSize, string> = {
-  sm: "text-xs px-2.5 py-1.5 gap-1.5 rounded-md font-medium",
-  md: "text-sm px-3.5 py-2 gap-2 rounded-lg font-medium",
-  lg: "text-base px-5 py-2.5 gap-2.5 rounded-lg font-semibold",
+  sm: "text-xs px-3 py-2 gap-1.5 rounded-lg font-medium min-h-[36px]",
+  md: "text-sm px-4 py-2.5 gap-2 rounded-xl font-medium min-h-[44px]",
+  lg: "text-base px-6 py-3 gap-2.5 rounded-xl font-semibold min-h-[48px]",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -50,7 +52,7 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         disabled={isDisabled}
-        className={`inline-flex items-center justify-center transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 select-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
+        className={`inline-flex items-center justify-center transition-all duration-100 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1 select-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer ${variantClasses[variant]} ${sizeClasses[size]} ${className}`}
         {...props}
       >
         {isLoading ? (
@@ -66,4 +68,3 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 );
 
 Button.displayName = "Button";
-

@@ -4,9 +4,11 @@ import {
   depositFunds,
   fetchWallet,
   fetchWallets,
+  updateWallet,
   withdrawFunds,
   type CreateWalletInput,
   type DepositInput,
+  type UpdateWalletInput,
   type WithdrawInput,
 } from "../api/wallets";
 import { keys } from "../query";
@@ -61,6 +63,19 @@ export function useWithdraw() {
       queryClient.invalidateQueries({ queryKey: keys.wallets() });
       queryClient.invalidateQueries({ queryKey: keys.wallet(variables.walletID) });
       queryClient.invalidateQueries({ queryKey: keys.transactions() });
+    },
+  });
+}
+
+export function useUpdateWallet() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ walletID, data }: { walletID: string; data: UpdateWalletInput }) =>
+      updateWallet(walletID, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: keys.wallets() });
+      queryClient.invalidateQueries({ queryKey: keys.wallet(variables.walletID) });
     },
   });
 }

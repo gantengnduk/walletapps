@@ -7,12 +7,15 @@ import (
 )
 
 type Wallet struct {
-	ID        string          `json:"id"`
-	Name      string          `json:"name"`
-	Currency  string          `json:"currency"`
-	Balance   decimal.Decimal `json:"balance"`
-	CreatedAt time.Time       `json:"created_at"`
-	UpdatedAt time.Time       `json:"updated_at"`
+	ID            string          `json:"id"`
+	AccountNumber string          `json:"account_number"`
+	Name          string          `json:"name"`
+	Currency      string          `json:"currency"`
+	Category      string          `json:"category"`
+	Balance       decimal.Decimal `json:"balance"`
+	Version       int64           `json:"version"`
+	CreatedAt     time.Time       `json:"created_at"`
+	UpdatedAt     time.Time       `json:"updated_at"`
 }
 
 type TransactionRecord struct {

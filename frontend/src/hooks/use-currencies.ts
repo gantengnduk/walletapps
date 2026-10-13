@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchCurrencies, fetchRatePreview } from "../api/currencies";
+import { fetchCurrencies, fetchMarketRates, fetchRatePreview } from "../api/currencies";
 import { keys } from "../query";
 
 export function useCurrencies() {
@@ -18,6 +18,15 @@ export function useRatePreview(from: string, to: string, amount: string, enabled
     queryFn: () => fetchRatePreview(from, to, amount),
     enabled: shouldFetch,
     staleTime: 10_000, // 10 seconds for conversion preview
+  });
+}
+
+export function useMarketRates() {
+  return useQuery({
+    queryKey: keys.marketRates(),
+    queryFn: fetchMarketRates,
+    staleTime: 60_000,
+    refetchInterval: 60_000,
   });
 }
 

@@ -50,10 +50,10 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
             ref={ref}
             id={selectId}
             disabled={disabled}
-            className={`w-full appearance-none rounded-lg border bg-white px-3 py-2 pr-9 text-sm shadow-sm transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed ${
+            className={`w-full appearance-none rounded-xl border bg-white px-3.5 py-2.5 pr-10 min-h-[44px] text-sm shadow-xs transition-colors focus:outline-none focus:ring-2 focus:ring-offset-1 disabled:bg-slate-50 disabled:opacity-60 disabled:cursor-not-allowed ${
               error
-                ? "border-rose-400 focus:border-rose-500 focus:ring-rose-400"
-                : "border-slate-300 focus:border-indigo-500 focus:ring-indigo-400"
+                ? "border-red-400 focus:border-red-500 focus:ring-red-400"
+                : "border-slate-300 focus:border-blue-600 focus:ring-blue-400"
             } ${className}`}
             {...props}
           >
@@ -65,14 +65,13 @@ export const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
                 ))
               : children}
           </select>
-          <ChevronDown className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+          <ChevronDown className="pointer-events-none absolute right-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
         </div>
 
-        {error && <p className="text-xs font-medium text-rose-600">{error}</p>}
+        {error && <p className="text-xs font-medium text-red-600 animate-fadeIn">{error}</p>}
       </div>
     );
   },
 );
 
 Select.displayName = "Select";
-

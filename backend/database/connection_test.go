@@ -52,8 +52,8 @@ func TestDatabaseConnectionAndMigrations(t *testing.T) {
 	}
 
 	// Verify inserting and reading a test wallet
-	insertQuery := `INSERT INTO wallets (id, name, currency, balance) VALUES (?, ?, ?, ?);`
-	_, err = db.Exec(insertQuery, "w-1", "Test Wallet", "USD", "100.50")
+	insertQuery := `INSERT INTO wallets (id, account_number, name, currency, balance) VALUES (?, ?, ?, ?, ?);`
+	_, err = db.Exec(insertQuery, "w-1", "202610131200000001", "Test Wallet", "USD", "100.50")
 	if err != nil {
 		t.Fatalf("failed to insert test wallet: %v", err)
 	}

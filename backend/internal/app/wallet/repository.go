@@ -14,7 +14,8 @@ type WalletRepository interface {
 	GetByID(ctx context.Context, id string) (*entities.Wallet, error)
 	GetByIDForUpdate(ctx context.Context, tx *sql.Tx, id string) (*entities.Wallet, error)
 	List(ctx context.Context) ([]entities.Wallet, error)
-	UpdateBalance(ctx context.Context, tx *sql.Tx, id string, newBalance decimal.Decimal) error
+	Update(ctx context.Context, wallet *entities.Wallet) error
+	UpdateBalance(ctx context.Context, tx *sql.Tx, id string, newBalance decimal.Decimal, expectedVersion int64) error
 	RecordTransaction(ctx context.Context, tx *sql.Tx, txRecord *entities.TransactionRecord) error
 	RecordLedgerEntry(ctx context.Context, tx *sql.Tx, entry *entities.LedgerEntryRecord) error
 	GetLedgerEntriesByWalletID(ctx context.Context, walletID string, limit int) ([]entities.LedgerEntryRecord, error)

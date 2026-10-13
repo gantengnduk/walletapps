@@ -44,6 +44,14 @@ func NewUnprocessableEntity(detail string) *AppError {
 	}
 }
 
+func NewConflict(detail string) *AppError {
+	return &AppError{
+		Code:    http.StatusConflict,
+		Message: constants.Conflict,
+		Detail:  detail,
+	}
+}
+
 func NewInternal(err error) *AppError {
 	detail := "internal server error"
 	if err != nil {
