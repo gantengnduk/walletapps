@@ -1,0 +1,48 @@
+:root {
+  /* Surface & Background */
+  --wallet-bg: #f8fafc;
+  --wallet-surface: #ffffff;
+  --wallet-surface-subtle: #f1f5f9;
+  --wallet-surface-hover: #f8fafc;
+
+  /* Borders & Dividers */
+  --wallet-border: #e2e8f0;
+  --wallet-border-strong: #cbd5e1;
+  --wallet-border-focus: #6366f1;
+
+  /* Typography Colors */
+  --wallet-text: #0f172a;
+  --wallet-text-muted: #64748b;
+  --wallet-text-subtle: #94a3b8;
+
+  /* Brand / Action Palette */
+  --wallet-primary: #4f46e5;
+  --wallet-primary-hover: #4338ca;
+  --wallet-primary-subtle: #eef2ff;
+  --wallet-primary-text: #3730a3;
+
+  /* Semantic Feedback Colors */
+  --wallet-success: #10b981;
+  --wallet-success-bg: #ecfdf5;
+  --wallet-success-text: #065f46;
+
+  --wallet-danger: #f43f5e;
+  --wallet-danger-bg: #fff1f2;
+  --wallet-danger-text: #9f1239;
+
+  --wallet-warning: #f59e0b;
+  --wallet-warning-bg: #fffbeb;
+  --wallet-warning-text: #92400e;
+
+  /* Shadows */
+  --wallet-shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --wallet-shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.07), 0 2px 4px -2px rgb(0 0 0 / 0.07);
+  --wallet-shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.08);
+
+  /* Radius */
+  --wallet-radius-sm: 0.375rem;
+  --wallet-radius-md: 0.5rem;
+  --wallet-radius-lg: 0.75rem;
+  --wallet-radius-xl: 1rem;
+}
+

@@ -1,0 +1,27 @@
+# Operating System Files
+.DS_Store
+Thumbs.db
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/*.log
+frontend/.env.local
+frontend/.env.*.local
+
+# Backend
+backend/bin/
+backend/*.db
+backend/*.db-journal
+backend/*.db-wal
+backend/*.db-shm
+backend/data/
+backend/*.log
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+

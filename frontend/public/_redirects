@@ -1,0 +1,4 @@
+# Cloudflare Pages / Netlify proxy and SPA routing rules
+/api/*  https://api.practice.my.id/api/:splat  200
+/*      /index.html                            200
+
